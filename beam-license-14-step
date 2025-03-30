@@ -1,0 +1,510 @@
+// Full 14-Step Beam Licensing App (Updated Version Without Step 2)
+
+import React, { useState } from 'react';
+import Confetti from 'react-confetti';
+import emailjs from '@emailjs/browser';
+
+const steps = [
+  'Welcome',
+  'Artist Alignment',
+  'License Type',
+  'Artist Stage',
+  'Song Duration',
+  'Programming Type',
+  'License Term',
+  'Usage Region',
+  'Emotional Impact',
+  'Track Placement',
+  'Review & Estimate',
+  'Amplification Plan',
+  'Quote Complete',
+  'Submission Successful!'
+];
+
+export default function BeamLicensingApp() {
+  const [step, setStep] = useState(0);
+  const [form, setForm] = useState({
+    error: '',
+    artistAlignment: '',
+    licenseType: '',
+    artistStage: '',
+    songDuration: '',
+    programmingType: [],
+    licenseTerm: '',
+    usageRegion: '',
+    emotionalImpact: '',
+    trackPlacement: '',
+    amplificationOptions: [],
+    brandFollowers: '',
+    userEmail: ''
+  });
+
+  const handleInput = (field, value) => setForm({ ...form, [field]: value });
+  const handleMulti = (field, value) => {
+    const current = new Set(form[field]);
+    current.has(value) ? current.delete(value) : current.add(value);
+    setForm({ ...form, [field]: Array.from(current) });
+  };
+
+  const next = () => {
+    const requiredFields = {
+      1: 'artistAlignment',
+      2: 'licenseType',
+      3: 'artistStage',
+      4: 'songDuration',
+      5: 'programmingType',
+      6: 'licenseTerm',
+      7: 'usageRegion',
+      8: 'emotionalImpact',
+      9: 'trackPlacement',
+      11: 'amplificationOptions',
+      12: 'userEmail'
+    };
+
+    const field = requiredFields[step];
+    if (field && (!form[field] || (Array.isArray(form[field]) && form[field].length === 0))) {
+      setForm(prev => ({ ...prev, error: 'This step is required' }));
+      return;
+    }
+
+    setForm(prev => ({ ...prev, error: '' }));
+    if (step < steps.length - 1) setStep(step + 1);
+  };
+
+  const back = () => step > 0 && setStep(step - 1);
+
+  const calculateEstimate = () => {
+    const base = 500;
+    const multipliers = {
+      licenseType: {
+        Sync: 2.0,
+        Mechanical: 1.2,
+        Performance: 1.3,
+        'Internal Use': 0.8,
+        'Full Stack': 4.4
+      },
+      artistStage: {
+        Developing: 1.25,
+        Emerging: 1.5,
+        Breaking: 2.0
+      },
+      songDuration: {
+        '15 seconds': 0.8,
+        '30 seconds': 1.0,
+        '60 seconds': 1.2,
+        'Full Song': 1.5
+      },
+      programmingType: {
+        'Film (Theatrical/Streaming)': 1.75,
+        'TV Series / Streaming': 1.5,
+        'TV Ad / Commercial': 1.7,
+        'Online Ad': 1.4,
+        'Talk Show / News': 1.1,
+        'Sports Programming': 1.3,
+        Podcast: 1.0,
+        'Video Game': 1.6,
+        'Social Media': 1.2
+      },
+      licenseTerm: {
+        '1 Month': 0.75,
+        '3 Months': 1.0,
+        '6 Months': 1.2,
+        '1 Year': 1.5,
+        'Perpetual Recurring': 2.5
+      },
+      usageRegion: {
+        Local: 1.0,
+        Regional: 1.2,
+        National: 1.5,
+        Global: 2.0
+      },
+      emotionalImpact: {
+        "It's background music": 1.0,
+        'We want to energize listeners and build momentum': 1.25,
+        'We want to drive a story forward': 1.5,
+        'We want to heighten the emotion of the listeners': 2.0
+      },
+      trackPlacement: {
+        'Montage/ B-roll': 1.2,
+        Background: 1.0,
+        'Featured Performance': 1.8,
+        'Opening or Closing Segment': 1.3
+      }
+    };
+
+    try {
+      const total = base *
+        multipliers.licenseType[form.licenseType] *
+        multipliers.artistStage[form.artistStage] *
+        multipliers.songDuration[form.songDuration] *
+        (form.programmingType.reduce((acc, p) => acc + multipliers.programmingType[p], 0) / Math.max(1, form.programmingType.length)) *
+        multipliers.licenseTerm[form.licenseTerm] *
+        multipliers.usageRegion[form.usageRegion] *
+        multipliers.emotionalImpact[form.emotionalImpact] *
+        multipliers.trackPlacement[form.trackPlacement];
+      return Math.round(total).toLocaleString();
+    } catch {
+      return 'TBD';
+    }
+  };
+
+  const sendEmail = () => {
+    emailjs.send('YOUR_SERVICE_ID', 'YOUR_TEMPLATE_ID', {
+      to_email: form.userEmail,
+      ...form,
+      quote_amount: calculateEstimate()
+    }, 'YOUR_PUBLIC_KEY')
+      .then(() => alert('Quote emailed!'))
+      .catch(() => alert('Error sending email'));
+  };
+
+  const renderStep = () => {
+    switch (step) {
+      case 0:
+        return (
+          <div className="text-center space-y-4">
+            <img
+              src="https://raw.githubusercontent.com/stephenblackwell/git_test/main/TheBeamLogoBlack.png"
+              alt="The Beam Logo"
+              className="mx-auto w-40"
+            />
+            <h1 className="text-3xl font-bold">Let’s build something special</h1>
+            <p className="text-lg text-gray-600">These artists own their rights. You’re talking to the source.</p>
+            <button
+              onClick={next}
+              className="bg-black text-white px-6 py-3 rounded-full text-lg shadow hover:scale-105 transform transition-transform duration-200"
+            >
+              Let’s build your quote
+            </button>
+          </div>
+        );
+      case 1:
+        return (
+          <div>
+            <h2 className="text-xl font-semibold mb-6">How will you partner with the artist?</h2>
+            <div className="space-y-4">
+              <label className="block">
+                <input
+                  type="radio"
+                  name="artistAlignment"
+                  value="Just need the music"
+                  checked={form.artistAlignment === 'Just need the music'}
+                  onChange={(e) => handleInput('artistAlignment', e.target.value)}
+                  className="mr-2"
+                />
+                Just need the music
+              </label>
+              <label className="block">
+                <input
+                  type="radio"
+                  name="artistAlignment"
+                  value="Need name, image, and likeness as well as the music"
+                  checked={form.artistAlignment === 'Need name, image, and likeness as well as the music'}
+                  onChange={(e) => handleInput('artistAlignment', e.target.value)}
+                  className="mr-2"
+                />
+                Need name, image, and likeness as well as the music
+              </label>
+            </div>
+          </div>
+        );
+      case 2:
+        return (
+          <div>
+            <h2 className="text-xl font-semibold mb-6">What type of license are you looking to secure?</h2>
+            <div className="space-y-4">
+              {['Sync','Mechanical','Performance','Internal Use','Full Stack'].map(option => (
+                <label key={option} className="block">
+                  <input
+                    type="radio"
+                    name="licenseType"
+                    value={option}
+                    checked={form.licenseType === option}
+                    onChange={(e) => handleInput('licenseType', e.target.value)}
+                    className="mr-2"
+                  />
+                  {option}
+                </label>
+              ))}
+            </div>
+          </div>
+        );
+      case 3:
+        return (
+          <div>
+            <h2 className="text-xl font-semibold mb-6">What artist stage best suits your needs?</h2>
+            <div className="space-y-4">
+              {['Developing', 'Emerging', 'Breaking'].map(option => (
+                <label key={option} className="block">
+                  <input
+                    type="radio"
+                    name="artistStage"
+                    value={option}
+                    checked={form.artistStage === option}
+                    onChange={(e) => handleInput('artistStage', e.target.value)}
+                    className="mr-2"
+                  />
+                  {option}
+                </label>
+              ))}
+            </div>
+          </div>
+        );
+      case 4:
+        return (
+          <div>
+            <h2 className="text-xl font-semibold mb-6">How much of the artist’s song would you like to use in your programming?</h2>
+            <div className="space-y-4">
+              {['15 seconds', '30 seconds', '60 seconds', 'Full Song'].map(option => (
+                <label key={option} className="block">
+                  <input
+                    type="radio"
+                    name="songDuration"
+                    value={option}
+                    checked={form.songDuration === option}
+                    onChange={(e) => handleInput('songDuration', e.target.value)}
+                    className="mr-2"
+                  />
+                  {option}
+                </label>
+              ))}
+            </div>
+          </div>
+        );
+      case 5:
+        return (
+          <div>
+            <h2 className="text-xl font-semibold mb-6">What will you program with the song license? (Check all that apply)</h2>
+            <div className="space-y-2">
+              {[
+                'Film (Theatrical/Streaming)',
+                'TV Series / Streaming',
+                'TV Ad / Commercial',
+                'Online Ad',
+                'Talk Show / News',
+                'Sports Programming',
+                'Podcast',
+                'Video Game',
+                'Social Media'
+              ].map(option => (
+                <label key={option} className="block">
+                  <input
+                    type="checkbox"
+                    name="programmingType"
+                    value={option}
+                    checked={form.programmingType.includes(option)}
+                    onChange={() => handleMulti('programmingType', option)}
+                    className="mr-2"
+                  />
+                  {option}
+                </label>
+              ))}
+            </div>
+          </div>
+        );
+      case 6:
+        return (
+          <div>
+            <h2 className="text-xl font-semibold mb-6">How long will you license the song?</h2>
+            <div className="space-y-4">
+              {['1 Month', '3 Months', '6 Months', '1 Year', 'Perpetual Recurring'].map(option => (
+                <label key={option} className="block">
+                  <input
+                    type="radio"
+                    name="licenseTerm"
+                    value={option}
+                    checked={form.licenseTerm === option}
+                    onChange={(e) => handleInput('licenseTerm', e.target.value)}
+                    className="mr-2"
+                  />
+                  {option}
+                </label>
+              ))}
+            </div>
+          </div>
+        );
+      case 7:
+        return (
+          <div>
+            <h2 className="text-xl font-semibold mb-6">Where will you use the license?</h2>
+            <div className="space-y-4">
+              {['Local', 'Regional', 'National', 'Global'].map(option => (
+                <label key={option} className="block">
+                  <input
+                    type="radio"
+                    name="usageRegion"
+                    value={option}
+                    checked={form.usageRegion === option}
+                    onChange={(e) => handleInput('usageRegion', e.target.value)}
+                    className="mr-2"
+                  />
+                  {option}
+                </label>
+              ))}
+            </div>
+          </div>
+        );
+      case 8:
+        return (
+          <div>
+            <h2 className="text-xl font-semibold mb-6">Please characterize how the song will impact listeners.</h2>
+            <div className="space-y-4">
+              {["It's background music", "We want to energize listeners and build momentum", "We want to drive a story forward", "We want to heighten the emotion of the listeners"].map(option => (
+                <label key={option} className="block">
+                  <input
+                    type="radio"
+                    name="emotionalImpact"
+                    value={option}
+                    checked={form.emotionalImpact === option}
+                    onChange={(e) => handleInput('emotionalImpact', e.target.value)}
+                    className="mr-2"
+                  />
+                  {option}
+                </label>
+              ))}
+            </div>
+          </div>
+        );
+      case 9:
+        return (
+          <div>
+            <h2 className="text-xl font-semibold mb-6">How will you place the track?</h2>
+            <div className="space-y-4">
+              {['Montage/ B-roll', 'Background', 'Featured Performance', 'Opening or Closing Segment'].map(option => (
+                <label key={option} className="block">
+                  <input
+                    type="radio"
+                    name="trackPlacement"
+                    value={option}
+                    checked={form.trackPlacement === option}
+                    onChange={(e) => handleInput('trackPlacement', e.target.value)}
+                    className="mr-2"
+                  />
+                  {option}
+                </label>
+              ))}
+            </div>
+          </div>
+        );
+      case 10:
+        return (
+          <div>
+            <h2 className="text-xl font-semibold mb-6">Review & Estimate</h2>
+            <div className="space-y-2 text-base">
+              <p><strong>Artist Alignment:</strong> {form.artistAlignment}</p>
+              <p><strong>License Type:</strong> {form.licenseType}</p>
+              <p><strong>Artist Stage:</strong> {form.artistStage}</p>
+              <p><strong>Song Duration:</strong> {form.songDuration}</p>
+              <p><strong>Programming Type:</strong> {form.programmingType.join(', ')}</p>
+              <p><strong>License Term:</strong> {form.licenseTerm}</p>
+              <p><strong>Usage Region:</strong> {form.usageRegion}</p>
+              <p><strong>Emotional Impact:</strong> {form.emotionalImpact}</p>
+              <p><strong>Track Placement:</strong> {form.trackPlacement}</p>
+            </div>
+            <p className="mt-4 font-bold text-green-600">Estimated quote: ${calculateEstimate()} Beam Estimate*</p>
+            <p className="text-sm text-gray-500">*Subject to final details & rights</p>
+          </div>
+        );
+      case 11:
+        return (
+          <div>
+            <h2 className="text-xl font-semibold mb-6">How We'll Amplify our Partnership (Check all that apply)</h2>
+            <div className="space-y-4">
+              {[
+                "We'll follow the artist on social",
+                "We'll promote the Sponsored Challenge on our socials",
+                "We'll promote the winning artist on our social"
+              ].map(option => (
+                <label key={option} className="block">
+                  <input
+                    type="checkbox"
+                    name="amplificationOptions"
+                    value={option}
+                    checked={form.amplificationOptions.includes(option)}
+                    onChange={() => handleMulti('amplificationOptions', option)}
+                    className="mr-2"
+                  />
+                  {option}
+                </label>
+              ))}
+              <div className="mt-4">
+                <label className="block text-sm font-medium text-gray-700 mb-1">Number of Social Followers</label>
+                <input
+                  type="text"
+                  value={form.brandFollowers}
+                  onChange={(e) => handleInput('brandFollowers', e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                />
+              </div>
+            </div>
+          </div>
+        );
+      case 12:
+        return (
+          <div>
+            <h2 className="text-xl font-semibold mb-6">Where should we send your quote?</h2>
+            <input
+              type="email"
+              placeholder="you@brand.com"
+              value={form.userEmail}
+              onChange={(e) => handleInput('userEmail', e.target.value)}
+              className="w-full px-4 py-2 border border-gray-300 rounded-md mb-4"
+            />
+            <button
+              onClick={() => {
+                sendEmail();
+                setStep(step + 1);
+              }}
+              className="bg-black text-white px-6 py-2 rounded-md hover:bg-gray-800 transition"
+            >
+              Submit
+            </button>
+          </div>
+        );
+      case 13:
+        return (
+          <div className="text-center">
+            <Confetti recycle={false} numberOfPieces={250} />
+            <h2 className="text-2xl font-bold mb-4">Quote Complete</h2>
+            <p className="text-lg">A member of The Beam will follow up shortly. Let’s get great new artists paid.</p>
+          </div>
+        );
+      default:
+        return <p>Step not implemented yet.</p>;
+    }
+  };
+
+  return (
+    <div className="max-w-xl mx-auto p-6">
+      <div className="mb-4">
+        <p className="text-sm text-gray-500">Step {step + 1} of {steps.length}</p>
+        <div className="w-full h-2 bg-gray-200 rounded-full overflow-hidden mb-4">
+          <div className="h-full bg-black transition-all duration-300" style={{ width: `${((step + 1) / steps.length) * 100}%` }}></div>
+        </div>
+        <h1 className="text-2xl font-bold mb-6">{steps[step]}</h1>
+      </div>
+      <div className="min-h-[300px] mb-2">
+        {form.error && <p className="text-red-500 text-sm font-semibold mb-4">{form.error}.</p>}
+        {renderStep()}
+      </div>
+      <div className="flex justify-between mt-2">
+        {step > 0 && (
+          <button
+            onClick={back}
+            className="bg-white text-black border border-black px-3 py-1 rounded-md text-base hover:bg-gray-100 transition"
+          >
+            Back
+          </button>
+        )}
+        {step > 0 && step < steps.length - 1 && (
+          <button
+            onClick={next}
+            className="bg-black text-white px-3 py-1 rounded-md text-base hover:bg-gray-800 transition"
+          >
+            Next
+          </button>
+        )}
+      </div>
+    </div>
+  );
+}
